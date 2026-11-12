@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bilal School Management System</title>
+<style>
+body{font-family:Arial;margin:0;background:#f1f5f9;color:#172554}
+header{background:#12365a;color:white;padding:22px;text-align:center}
+main{padding:18px;max-width:850px;margin:auto}
+.card{background:white;padding:18px;border-radius:12px;margin:14px 0}
+input,select,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;border:1px solid #ccc;border-radius:7px}
+button{background:#1765c1;color:white;border:0;font-weight:bold}
+h2{color:#1765c1}
+</style>
+</head>
+<body>
+<header>
+<h1>Bilal School Management System</h1>
+<p>Grade 1–12 | English & Afaan Oromoo</p>
+</header>
+<main>
+<div class="card">
+<h2 id="welcome">Welcome to Bilal School</h2>
+<button onclick="changeLanguage()">English / Afaan Oromoo</button>
+</div>
+<div class="card">
+<h2 id="register">Student Registration</h2>
+<form id="form">
+<input id="name" placeholder="Student Full Name" required>
+<input id="studentid" placeholder="Student ID" required>
+<select id="grade" required>
+<option value="">Select Grade</option>
+</select>
+<select id="gender" required>
+<option value="">Select Gender</option>
+<option>Male</option><option>Female</option>
+</select>
+<button type="submit" id="save">Register Student</button>
+</form>
+</div>
+<div class="card">
+<h2 id="listtitle">Student List</h2>
+<p id="count">Total Students: 0</p>
+<div id="students"></div>
+</div>
+</main>
+<script>
+let students=JSON.parse(localStorage.getItem("bilalStudents")||"[]");
+let om=false;
+for(let i=1;i<=12;i++){
+let o=document.createElement("option");
+o.value=i;o.textContent="Grade "+i;
+document.getElementById("grade").appendChild(o);
+}
+function show(){
+document.getElementById("count").textContent=(om?"Barattoota waliigalaa: ":"Total Students: ")+students.length;
+document.getElementById("students").innerHTML=students.map(s=>"<p>"+s.name+" | ID: "+s.id+" | Grade "+s.grade+" | "+s.gender+"</p>").join("");
+}
+document.getElementById("form").onsubmit=function(e){
+e.preventDefault();
+let s={name:document.getElementById("name").value,id:document.getElementById("studentid").value,grade:document.getElementById("grade").value,gender:document.getElementById("gender").value};
+if(students.some(x=>x.id===s.id)){alert("Student ID already exists");return;}
+students.push(s);
+localStorage.setItem("bilalStudents",JSON.stringify(students));
+this.reset();show();
+};
+function changeLanguage(){
+om=!om;
+document.getElementById("welcome").textContent=om?"Baga Gara Mana Barumsaa Bilal Nagaan Dhuftan":"Welcome to Bilal School";
+document.getElementById("register").textContent=om?"Galmee Barattootaa":"Student Registration";
+document.getElementById("listtitle").textContent=om?"Tarree Barattootaa":"Student List";
+document.getElementById("save").textContent=om?"Barataa Galmeessi":"Register Student";
+show();
+}
+show();
+</script>
+</body>
+</html>
