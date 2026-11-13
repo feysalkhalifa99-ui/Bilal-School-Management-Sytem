@@ -1,79 +1,126 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bilal School Management System</Bilal School>
-<style>
-body{font-family:Arial;margin:0;background:#f1f5f9;color:#172554}
-header{background:#12365a;color:white;padding:22px;text-align:center}
-main{padding:18px;max-width:850px;margin:auto}
-.card{background:white;padding:18px;border-radius:12px;margin:14px 0}
-input,select,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;border:1px solid #ccc;border-radius:7px}
-button{background:#1765c1;color:white;border:0;font-weight:bold}
-h2{color:#1765c1}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#126b45">
+  <meta name="description" content="Bilal School Management System, Grades 1–12">
+  <title>Bilal School Management System</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-<h1>Bilal School Management System</h1>
-<p>Grade 1–12 | English & Afaan Oromoo</p>
-</header>
-<main>
-<div class="card">
-<h2 id="welcome">Welcome to Bilal School</h2>
-<button onclick="changeLanguage()">English / Afaan Oromoo</button>
-</div>
-<div class="card">
-<h2 id="register">Student Registration</h2>
-<form id="form">
-<input id="name" placeholder="Student Full Name" required>
-<input id="studentid" placeholder="Student ID" required>
-<select id="grade" required>
-<option value="">Select Grade</option>
-</select>
-<select id="gender" required>
-<option value="">Select Gender</option>
-<option>Male</option><option>Female</option>
-</select>
-<button type="submit" id="save">Register Student</button>
-</form>
-</div>
-<div class="card">
-<h2 id="listtitle">Student List</h2>
-<p id="count">Total Students: 0</p>
-<div id="students"></div>
-</div>
-</main>
-<script>
-let students=JSON.parse(localStorage.getItem("bilalStudents")||"[]");
-let om=false;
-for(let i=1;i<=12;i++){
-let o=document.createElement("option");
-o.value=i;o.textContent="Grade "+i;
-document.getElementById("grade").appendChild(o);
-}
-function show(){
-document.getElementById("count").textContent=(om?"Barattoota waliigalaa: ":"Total Students: ")+students.length;
-document.getElementById("students").innerHTML=students.map(s=>"<p>"+s.name+" | ID: "+s.id+" | Grade "+s.grade+" | "+s.gender+"</p>").join("");
-}
-document.getElementById("form").onsubmit=function(e){
-e.preventDefault();
-let s={name:document.getElementById("name").value,id:document.getElementById("studentid").value,grade:document.getElementById("grade").value,gender:document.getElementById("gender").value};
-if(students.some(x=>x.id===s.id)){alert("Student ID already exists");return;}
-students.push(s);
-localStorage.setItem("bilalStudents",JSON.stringify(students));
-this.reset();show();
-};
-function changeLanguage(){
-om=!om;
-document.getElementById("welcome").textContent=om?"Baga Gara Mana Barumsaa Bilal Nagaan Dhuftan":"Welcome to Bilal School";
-document.getElementById("register").textContent=om?"Galmee Barattootaa":"Student Registration";
-document.getElementById("listtitle").textContent=om?"Tarree Barattootaa":"Student List";
-document.getElementById("save").textContent=om?"Barataa Galmeessi":"Register Student";
-show();
-}
-show();
-</script>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">BS</div>
+      <div><strong>Bilal School</strong><small data-i18n="subtitle">Management System · Grades 1–12</small></div>
+    </div>
+    <div class="top-actions">
+      <select id="language" aria-label="Language"><option value="en">English</option><option value="om">Afaan Oromo</option></select>
+      <button id="installBtn" class="btn light" hidden data-i18n="install">Install App</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="school-label" data-i18n="workspace">SCHOOL WORKSPACE</div>
+      <button class="nav active" data-page="dashboard">▦ <span data-i18n="dashboard">Dashboard</span></button>
+      <button class="nav" data-page="students">♙ <span data-i18n="students">Students</span></button>
+      <button class="nav" data-page="teachers">♧ <span data-i18n="teachers">Teachers</span></button>
+      <button class="nav" data-page="attendance">✓ <span data-i18n="attendance">Attendance</span></button>
+      <button class="nav" data-page="exams">▤ <span data-i18n="exams">Examinations</span></button>
+      <button class="nav" data-page="fees">¤ <span data-i18n="fees">School Fees</span></button>
+      <button class="nav" data-page="reports">▧ <span data-i18n="reports">Reports</span></button>
+      <div class="sidebar-note"><strong>Bilal School</strong><br><span data-i18n="gradeRange">Grade 1 to Grade 12</span><br><small>Harar, Ethiopia</small></div>
+    </aside>
+
+    <main class="main">
+      <div class="page-heading">
+        <div><p class="eyebrow" data-i18n="overview">OVERVIEW</p><h1 id="pageTitle">Dashboard</h1><p class="muted" data-i18n="welcome">Welcome to your school management workspace.</p></div>
+        <span class="online-pill"><i></i><span data-i18n="pwaReady">PWA ready</span></span>
+      </div>
+      <section id="dashboardPage" class="page">
+        <div class="stats">
+          <article class="stat-card"><span data-i18n="totalStudents">Total Students</span><strong id="studentCount">0</strong><small data-i18n="grade12">Across Grades 1–12</small></article>
+          <article class="stat-card"><span data-i18n="totalTeachers">Total Teachers</span><strong id="teacherCount">0</strong><small data-i18n="teachingStaff">Teaching staff</small></article>
+          <article class="stat-card"><span data-i18n="attendanceToday">Attendance Today</span><strong id="attendanceCount">0</strong><small data-i18n="recordsToday">Records entered today</small></article>
+          <article class="stat-card"><span data-i18n="feeRecords">Fee Records</span><strong id="feeCount">0</strong><small data-i18n="paymentsLogged">Payments logged</small></article>
+        </div>
+        <div class="panel welcome-panel"><div><p class="eyebrow" data-i18n="gettingStarted">GETTING STARTED</p><h2 data-i18n="manageSchool">Manage your school in one place</h2><p class="muted" data-i18n="quickStart">Register students and teachers, record daily attendance, enter exam marks and track school fees.</p></div><div class="grade-grid" id="gradeGrid"></div></div>
+        <div class="panel"><div class="panel-head"><h2 data-i18n="recentStudents">Recently Added Students</h2><button class="text-btn" data-goto="students" data-i18n="viewAll">View all</button></div><div id="recentStudents" class="table-wrap"></div></div>
+      </section>
+
+      <section id="studentsPage" class="page" hidden>
+        <div class="panel">
+          <div class="panel-head"><div><h2 data-i18n="studentRegistration">Student Registration</h2><p class="muted" data-i18n="studentHelp">Add and manage learners from Grade 1 to Grade 12.</p></div><button id="exportStudents" class="btn light" data-i18n="exportCsv">Export CSV</button></div>
+          <form id="studentForm" class="form-grid">
+            <label><span data-i18n="fullName">Full name</span><input name="name" required placeholder="Student full name"></label>
+            <label><span data-i18n="grade">Grade</span><select name="grade" required id="studentGrade"></select></label>
+            <label><span data-i18n="gender">Gender</span><select name="gender"><option>Male</option><option>Female</option></select></label>
+            <label><span data-i18n="parentPhone">Parent phone</span><input name="phone" placeholder="+251..."></label>
+            <label><span data-i18n="studentId">Student ID (optional)</span><input name="studentId" placeholder="Auto-generated if blank"></label>
+            <button class="btn primary form-submit" type="submit" data-i18n="addStudent">Add Student</button>
+          </form>
+        </div>
+        <div class="panel"><div class="panel-head"><h2 data-i18n="studentList">Student List</h2><input id="studentSearch" class="search" placeholder="Search by name, ID or grade"></div><div id="studentsTable" class="table-wrap"></div></div>
+      </section>
+
+      <section id="teachersPage" class="page" hidden>
+        <div class="panel"><div class="panel-head"><div><h2 data-i18n="teacherManagement">Teacher Management</h2><p class="muted" data-i18n="teacherHelp">Maintain teacher contact and subject details.</p></div></div>
+          <form id="teacherForm" class="form-grid">
+            <label><span data-i18n="fullName">Full name</span><input name="name" required></label>
+            <label><span data-i18n="subject">Subject</span><input name="subject" required placeholder="Mathematics"></label>
+            <label><span data-i18n="phone">Phone</span><input name="phone"></label>
+            <label><span data-i18n="assignedGrade">Assigned grade</span><select name="grade" class="grade-select"></select></label>
+            <button class="btn primary form-submit" type="submit" data-i18n="addTeacher">Add Teacher</button>
+          </form>
+        </div>
+        <div class="panel"><h2 data-i18n="teacherList">Teacher List</h2><div id="teachersTable" class="table-wrap"></div></div>
+      </section>
+
+      <section id="attendancePage" class="page" hidden>
+        <div class="panel"><h2 data-i18n="dailyAttendance">Daily Attendance</h2><p class="muted" data-i18n="attendanceHelp">Choose a grade and mark each learner's attendance.</p>
+          <div class="toolbar"><label><span data-i18n="grade">Grade</span><select id="attendanceGrade" class="grade-select"></select></label><label><span data-i18n="date">Date</span><input id="attendanceDate" type="date"></label></div>
+          <div id="attendanceList" class="table-wrap"></div><button id="saveAttendance" class="btn primary" data-i18n="saveAttendance">Save Attendance</button>
+        </div>
+      </section>
+
+      <section id="examsPage" class="page" hidden>
+        <div class="panel"><h2 data-i18n="examMarks">Examination Marks</h2><p class="muted" data-i18n="examHelp">Record a student's subject score out of 100.</p>
+          <form id="examForm" class="form-grid">
+            <label><span data-i18n="student">Student</span><select name="studentId" id="examStudent" required></select></label>
+            <label><span data-i18n="subject">Subject</span><input name="subject" required placeholder="English"></label>
+            <label><span data-i18n="examName">Exam name</span><input name="exam" required placeholder="Midterm"></label>
+            <label><span data-i18n="score">Score (0–100)</span><input name="score" type="number" min="0" max="100" required></label>
+            <button class="btn primary form-submit" type="submit" data-i18n="saveMark">Save Mark</button>
+          </form>
+        </div><div class="panel"><h2 data-i18n="marksRegister">Marks Register</h2><div id="examsTable" class="table-wrap"></div></div>
+      </section>
+
+      <section id="feesPage" class="page" hidden>
+        <div class="panel"><h2 data-i18n="feeTracking">Fee Tracking</h2><p class="muted" data-i18n="feeHelp">Record payments received from students.</p>
+          <form id="feeForm" class="form-grid">
+            <label><span data-i18n="student">Student</span><select name="studentId" id="feeStudent" required></select></label>
+            <label><span data-i18n="amountBirr">Amount (ETB)</span><input name="amount" type="number" min="0.01" step="0.01" required></label>
+            <label><span data-i18n="paymentDate">Payment date</span><input name="date" id="feeDate" type="date" required></label>
+            <label><span data-i18n="reference">Receipt / reference</span><input name="reference"></label>
+            <button class="btn primary form-submit" type="submit" data-i18n="recordPayment">Record Payment</button>
+          </form>
+        </div><div class="panel"><h2 data-i18n="paymentHistory">Payment History</h2><div id="feesTable" class="table-wrap"></div></div>
+      </section>
+
+      <section id="reportsPage" class="page" hidden>
+        <div class="panel"><h2 data-i18n="schoolReports">School Reports</h2><p class="muted" data-i18n="reportsHelp">Download a simple CSV report for backup or spreadsheet analysis.</p>
+          <div class="report-actions"><button class="btn primary" id="backupBtn" data-i18n="downloadBackup">Download Full Data Backup</button><button class="btn light" id="reportStudents" data-i18n="studentReport">Student Report CSV</button><button class="btn light" id="reportFees" data-i18n="feeReport">Fee Report CSV</button><button class="btn light" id="reportExams" data-i18n="examReport">Exam Report CSV</button></div>
+          <div class="notice"><strong data-i18n="important">Important:</strong> <span data-i18n="localStorageNote">This starter version saves data in this browser on this device. It does not yet synchronize between different users or devices. Connect the included Node.js/MySQL backend before using it as the school's shared live system.</span></div>
+          <label class="restore-label"><span data-i18n="restoreBackup">Restore backup JSON</span><input id="restoreFile" type="file" accept=".json,application/json"></label>
+        </div>
+      </section>
+      <footer>© <span id="year"></span> Bilal School · Harar, Ethiopia</footer>
+    </main>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
 </body>
-</html
+</html>
