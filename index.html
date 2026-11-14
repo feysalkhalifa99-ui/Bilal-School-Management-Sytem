@@ -1,650 +1,475 @@
 
-"use strict";
-
-/* BILAL SCHOOL MANAGEMENT SYSTEM
-   Grades 1–12 | English + Afaan Oromoo
-   Local browser storage version
-*/
-
-const $ = (s) => document.querySelector(s);
-const $$ = (s) => [...document.querySelectorAll(s)];
-const today = () => new Date().toISOString().slice(0, 10);
-const grades = Array.from({ length: 12 }, (_, i) => String(i + 1));
-
-const blank = () => ({
-  students: [],
-  teachers: [],
-  attendance: [],
-  exams: [],
-  fees: []
-});
-
-function loadDB() {
-  try {
-    const saved = JSON.parse(localStorage.getItem("bilalSchoolData"));
-    return saved && typeof saved === "object"
-      ? { ...blank(), ...saved }
-      : blank();
-  } catch {
-    return blank();
-  }
-}
-
-let db = loadDB();
-let lang = localStorage.getItem("bilalLang") || "en";
-let installPrompt = null;
-
-const words = {
-  en: {
-    dashboard: "Dashboard", students: "Students",
-    teachers: "Teachers", attendance: "Attendance",
-    exams: "Examinations", fees: "School Fees",
-    reports: "Reports", subtitle: "Management System · Grades 1–12",
-    workspace: "SCHOOL WORKSPACE", overview: "OVERVIEW",
-    welcome: "Welcome to your school management workspace.",
-    pwaReady: "PWA ready", totalStudents: "Total Students",
-    totalTeachers: "Total Teachers", attendanceToday: "Attendance Today",
-    feeRecords: "Fee Records", grade12: "Across Grades 1–12",
-    teachingStaff: "Teaching staff", recordsToday: "Records entered today",
-    paymentsLogged: "Payments logged", gettingStarted: "GETTING STARTED",
-    manageSchool: "Manage your school in one place",
-    quickStart: "Register students and teachers, record daily attendance, enter exam marks and track school fees.",
-    recentStudents: "Recently Added Students", viewAll: "View all",
-    studentRegistration: "Student Registration",
-    studentHelp: "Add and manage learners from Grade 1 to Grade 12.",
-    exportCsv: "Export CSV", fullName: "Full name", grade: "Grade",
-    gender: "Gender", parentPhone: "Parent phone",
-    studentId: "Student ID (optional)", addStudent: "Add Student",
-    studentList: "Student List", teacherManagement: "Teacher Management",
-    teacherHelp: "Maintain teacher contact and subject details.",
-    subject: "Subject", phone: "Phone", assignedGrade: "Assigned grade",
-    addTeacher: "Add Teacher", teacherList: "Teacher List",
-    dailyAttendance: "Daily Attendance",
-    attendanceHelp: "Choose a grade and mark each learner's attendance.",
-    date: "Date", saveAttendance: "Save Attendance",
-    examMarks: "Examination Marks",
-    examHelp: "Record a student's subject score out of 100.",
-    student: "Student", examName: "Exam name", score: "Score (0–100)",
-    saveMark: "Save Mark", marksRegister: "Marks Register",
-    feeTracking: "Fee Tracking",
-    feeHelp: "Record payments received from students.",
-    amountBirr: "Amount (ETB)", paymentDate: "Payment date",
-    reference: "Receipt / reference", recordPayment: "Record Payment",
-    paymentHistory: "Payment History", schoolReports: "School Reports",
-    reportsHelp: "Download a simple CSV report for backup or spreadsheet analysis.",
-    downloadBackup: "Download Full Data Backup",
-    studentReport: "Student Report CSV", feeReport: "Fee Report CSV",
-    examReport: "Exam Report CSV", important: "Important:",
-    localStorageNote: "This version saves data in this browser on this device. It does not synchronize between users or devices.",
-    restoreBackup: "Restore backup JSON", install: "Install App",
-    gradeRange: "Grade 1 to Grade 12",
-    name: "Name", action: "Action", status: "Status",
-    present: "Present", absent: "Absent", late: "Late",
-    noStudents: "No students found.", noTeachers: "No teachers found.",
-    noRecords: "No records yet.", added: "Added successfully.",
-    saved: "Saved successfully.", deleted: "Deleted successfully.",
-    chooseGrade: "Choose grade", chooseStudent: "Choose student",
-    confirmDelete: "Are you sure you want to delete this record?",
-    restored: "Backup restored successfully.",
-    invalidBackup: "Invalid backup file.",
-    requiredStudent: "Register a student first.",
-    amount: "Amount", exam: "Exam", delete: "Delete",
-    studentAdded: "Student added successfully.",
-    teacherAdded: "Teacher added successfully.",
-    markSaved: "Exam mark saved.", paymentSaved: "Payment recorded.",
-    attendanceSaved: "Attendance saved."
-  },
-  om: {
-    dashboard: "Gabatee", students: "Barattoota",
-    teachers: "Barsiisota", attendance: "Argama",
-    exams: "Qormaata", fees: "Kaffaltii Barnootaa",
-    reports: "Gabaasa", subtitle: "Sirna Bulchiinsa Mana Barumsaa · Kutaa 1–12",
-    workspace: "HOJII MANAA BARUMSAA", overview: "CUUNFAA",
-    welcome: "Baga gara sirna bulchiinsa mana barumsaa dhuftan.",
-    pwaReady: "Appiin qophaa'eera", totalStudents: "Baay'ina Barattootaa",
-    totalTeachers: "Baay'ina Barsiisotaa",
-    attendanceToday: "Argama Har'aa", feeRecords: "Galmee Kaffaltii",
-    grade12: "Kutaa 1–12", teachingStaff: "Barsiisota",
-    recordsToday: "Galmee har'a galmaa'e",
-    paymentsLogged: "Kaffaltii galmaa'e",
-    gettingStarted: "JALQABA", manageSchool: "Mana barumsaa kee bakka tokkotti bulchi",
-    quickStart: "Barattootaa fi barsiisota galmeessi, argama guyyaa guyyaa, qabxii qormaataa fi kaffaltii galmeessi.",
-    recentStudents: "Barattoota Haaraa", viewAll: "Hunda ilaali",
-    studentRegistration: "Galmee Barattootaa",
-    studentHelp: "Barattoota kutaa 1 hanga 12 galmeessi.",
-    exportCsv: "CSV Baasi", fullName: "Maqaa guutuu", grade: "Kutaa",
-    gender: "Saala", parentPhone: "Bilbila maatii",
-    studentId: "Lakkoofsa barataa (filannoo)", addStudent: "Barataa Galmeessi",
-    studentList: "Tarree Barattootaa",
-    teacherManagement: "Bulchiinsa Barsiisotaa",
-    teacherHelp: "Odeeffannoo barsiisotaa fi barnoota isaanii galmeessi.",
-    subject: "Barnoota", phone: "Bilbila", assignedGrade: "Kutaa ramadame",
-    addTeacher: "Barsiisaa Galmeessi", teacherList: "Tarree Barsiisotaa",
-    dailyAttendance: "Argama Guyyaa Guyyaa",
-    attendanceHelp: "Kutaa filadhuutii argama barattootaa mallatteessi.",
-    date: "Guyyaa", saveAttendance: "Argama Olkaa'i",
-    examMarks: "Qabxii Qormaataa",
-    examHelp: "Qabxii barataa 100 keessaa galmeessi.",
-    student: "Barataa", examName: "Maqaa qormaataa",
-    score: "Qabxii (0–100)", saveMark: "Qabxii Olkaa'i",
-    marksRegister: "Galmee Qabxii", feeTracking: "Hordoffii Kaffaltii",
-    feeHelp: "Kaffaltii barattootaa galmeessi.",
-    amountBirr: "Hanga (ETB)", paymentDate: "Guyyaa kaffaltii",
-    reference: "Lakkoofsa nagahee", recordPayment: "Kaffaltii Galmeessi",
-    paymentHistory: "Seenaa Kaffaltii", schoolReports: "Gabaasa Mana Barumsaa",
-    reportsHelp: "Gabaasa CSV buufadhu.",
-    downloadBackup: "Backup Guutuu Buufadhu",
-    studentReport: "Gabaasa Barattootaa CSV",
-    feeReport: "Gabaasa Kaffaltii CSV",
-    examReport: "Gabaasa Qormaataa CSV",
-    important: "Hubachiisa:",
-    localStorageNote: "Daataan browser fi meeshaa kana irratti qofa kuufama. Meeshaalee biraatti ofumaan hin darbu.",
-    restoreBackup: "Backup JSON Deebisi", install: "Appii Buufadhu",
-    gradeRange: "Kutaa 1 hanga 12", name: "Maqaa",
-    action: "Gocha", status: "Haala",
-    present: "Argame", absent: "Hin argamne", late: "Ture",
-    noStudents: "Barataan hin jiru.", noTeachers: "Barsiisaan hin jiru.",
-    noRecords: "Galmeen hin jiru.", added: "Milkaa'inaan galmaa'e.",
-    saved: "Milkaa'inaan olkaa'ame.", deleted: "Haqame.",
-    chooseGrade: "Kutaa filadhu", chooseStudent: "Barataa filadhu",
-    confirmDelete: "Galmee kana haquu barbaaddaa?",
-    restored: "Backup milkaa'inaan deebifame.",
-    invalidBackup: "Faayiliin backup sirrii miti.",
-    requiredStudent: "Jalqaba barataa galmeessi.",
-    amount: "Hanga", exam: "Qormaata", delete: "Haqi",
-    studentAdded: "Barataan milkaa'inaan galmaa'e.",
-    teacherAdded: "Barsiisaan milkaa'inaan galmaa'e.",
-    markSaved: "Qabxiin olkaa'ame.",
-    paymentSaved: "Kaffaltiin galmaa'e.",
-    attendanceSaved: "Argamni olkaa'ame."
-  }
-};
-
-function t(key) {
-  return words[lang]?.[key] || words.en[key] || key;
-}
-
-function save() {
-  try {
-    localStorage.setItem("bilalSchoolData", JSON.stringify(db));
-    renderAll();
-  } catch (error) {
-    alert("Storage error: " + error.message);
-  }
-}
-
-function uid(prefix) {
-  return prefix + "-" + Date.now().toString(36) +
-    Math.random().toString(36).slice(2, 6);
-}
-
-function esc(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;",
-    '"': "&quot;", "'": "&#39;"
-  })[char]);
-}
-
-function toast(message) {
-  const el = $("#toast");
-  if (!el) return;
-  el.textContent = message;
-  el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 2500);
-}
-
-function fillGrades() {
-  const options = grades.map(g =>
-    `<option value="${g}">${t("grade")} ${g}</option>`
-  ).join("");
-
-  ["#studentGrade", "#attendanceGrade", ".grade-select"].forEach(selector => {
-    $$(selector).forEach(select => {
-      const old = select.value;
-      select.innerHTML = `<option value="">${t("chooseGrade")}</option>` + options;
-      if (old) select.value = old;
-    });
-  });
-}
-
-function applyLang() {
-  document.documentElement.lang = lang === "om" ? "om" : "en";
-  $$("[data-i18n]").forEach(el => {
-    el.textContent = t(el.dataset.i18n);
-  });
-  $("#language").value = lang;
-  fillGrades();
-  renderAll();
-}
-
-function navigate(page) {
-  const valid = ["dashboard", "students", "teachers",
-    "attendance", "exams", "fees", "reports"];
-  if (!valid.includes(page)) return;
-
-  $$(".page").forEach(el => el.hidden = true);
-  const section = $("#" + page + "Page");
-  if (section) section.hidden = false;
-
-  $$(".nav").forEach(el =>
-    el.classList.toggle("active", el.dataset.page === page)
-  );
-
-  $("#pageTitle").textContent = t(page);
-  renderAll();
-}
-
-function studentName(id) {
-  return db.students.find(s => s.id === id)?.name || "—";
-}
-
-function table(headers, rows, emptyMessage = t("noRecords")) {
-  if (!rows.length) return `<p class="muted">${esc(emptyMessage)}</p>`;
-  return `<table><thead><tr>${headers.map(h =>
-    `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table>`;
-}
-
-function renderDashboard() {
-  $("#studentCount").textContent = db.students.length;
-  $("#teacherCount").textContent = db.teachers.length;
-  $("#attendanceCount").textContent =
-    db.attendance.filter(a => a.date === today() && a.status === "Present").length;
-  $("#feeCount").textContent = db.fees.length;
-
-  $("#gradeGrid").innerHTML = grades.map(g => {
-    const count = db.students.filter(s => s.grade === g).length;
-    return `<div class="grade-item"><strong>${t("grade")} ${g}</strong><span>${count}</span></div>`;
-  }).join("");
-
-  const recent = [...db.students].reverse().slice(0, 5);
-  $("#recentStudents").innerHTML = table(
-    [t("name"), t("grade"), t("studentId")],
-    recent.map(s => `<tr><td>${esc(s.name)}</td><td>${t("grade")} ${esc(s.grade)}</td><td>${esc(s.studentId)}</td></tr>`)
-  );
-}
-
-function renderStudents() {
-  const q = ($("#studentSearch").value || "").toLowerCase();
-  const list = db.students.filter(s =>
-    [s.name, s.studentId, s.grade, s.phone].join(" ").toLowerCase().includes(q)
-  );
-
-  $("#studentsTable").innerHTML = table(
-    [t("studentId"), t("name"), t("grade"), t("gender"), t("parentPhone"), t("action")],
-    list.map(s => `<tr>
-      <td>${esc(s.studentId)}</td><td>${esc(s.name)}</td>
-      <td>${t("grade")} ${esc(s.grade)}</td><td>${esc(s.gender)}</td>
-      <td>${esc(s.phone)}</td>
-      <td><button class="text-btn danger" data-delete="student" data-id="${esc(s.id)}">${t("delete")}</button></td>
-    </tr>`)
-  );
-
-  const studentOptions = `<option value="">${t("chooseStudent")}</option>` +
-    db.students.map(s =>
-      `<option value="${esc(s.id)}">${esc(s.name)} — ${t("grade")} ${esc(s.grade)}</option>`
-    ).join("");
-
-  $("#examStudent").innerHTML = studentOptions;
-  $("#feeStudent").innerHTML = studentOptions;
-}
-
-function renderTeachers() {
-  $("#teachersTable").innerHTML = table(
-    [t("name"), t("subject"), t("phone"), t("grade"), t("action")],
-    db.teachers.map(s => `<tr>
-      <td>${esc(s.name)}</td><td>${esc(s.subject)}</td>
-      <td>${esc(s.phone)}</td><td>${t("grade")} ${esc(s.grade)}</td>
-      <td><button class="text-btn danger" data-delete="teacher" data-id="${esc(s.id)}">${t("delete")}</button></td>
-    </tr>`)
-  );
-}
-
-function renderAttendance() {
-  const grade = $("#attendanceGrade").value;
-  const date = $("#attendanceDate").value || today();
-  const list = db.students.filter(s => s.grade === grade);
-
-  if (!grade) {
-    $("#attendanceList").innerHTML = `<p class="muted">${t("chooseGrade")}</p>`;
-    return;
-  }
-
-  $("#attendanceList").innerHTML = table(
-    [t("name"), t("status")],
-    list.map(s => {
-      const old = db.attendance.find(a =>
-        a.studentId === s.id && a.date === date
-      );
-      const status = old?.status || "Present";
-      return `<tr><td>${esc(s.name)}</td><td>
-        <select class="attendance-status" data-student="${esc(s.id)}">
-          <option ${status === "Present" ? "selected" : ""} value="Present">${t("present")}</option>
-          <option ${status === "Absent" ? "selected" : ""} value="Absent">${t("absent")}</option>
-          <option ${status === "Late" ? "selected" : ""} value="Late">${t("late")}</option>
-        </select>
-      </td></tr>`;
-    })
-  );
-}
-
-function renderExams() {
-  $("#examsTable").innerHTML = table(
-    [t("student"), t("subject"), t("exam"), t("score"), t("action")],
-    db.exams.map(e => `<tr>
-      <td>${esc(studentName(e.studentId))}</td>
-      <td>${esc(e.subject)}</td><td>${esc(e.exam)}</td>
-      <td>${esc(e.score)}%</td>
-      <td><button class="text-btn danger" data-delete="exam" data-id="${esc(e.id)}">${t("delete")}</button></td>
-    </tr>`)
-  );
-}
-
-function renderFees() {
-  $("#feesTable").innerHTML = table(
-    [t("student"), t("amount"), t("date"), t("reference"), t("action")],
-    db.fees.map(f => `<tr>
-      <td>${esc(studentName(f.studentId))}</td>
-      <td>${Number(f.amount).toFixed(2)} ETB</td>
-      <td>${esc(f.date)}</td><td>${esc(f.reference)}</td>
-      <td><button class="text-btn danger" data-delete="fee" data-id="${esc(f.id)}">${t("delete")}</button></td>
-    </tr>`)
-  );
-}
-
-function renderAll() {
-  renderDashboard();
-  renderStudents();
-  renderTeachers();
-  renderAttendance();
-  renderExams();
-  renderFees();
-}
-
-function formData(form) {
-  return Object.fromEntries(new FormData(form).entries());
-}
-
-function csvDownload(filename, rows) {
-  const csv = rows.map(row => row.map(value =>
-    `"${String(value ?? "").replace(/"/g, '""')}"`
-  ).join(",")).join("\r\n");
-
-  const blob = new Blob(["\uFEFF" + csv], {
-    type: "text/csv;charset=utf-8;"
-  });
-  downloadBlob(filename, blob);
-}
-
-function downloadBlob(filename, blob) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function exportStudents() {
-  csvDownload("bilal-students.csv", [
-    ["Student ID", "Name", "Grade", "Gender", "Phone"],
-    ...db.students.map(s => [s.studentId, s.name, s.grade, s.gender, s.phone])
-  ]);
-}
-
-function backup() {
-  const blob = new Blob([JSON.stringify(db, null, 2)], {
-    type: "application/json"
-  });
-  downloadBlob("bilal-school-backup-" + today() + ".json", blob);
-}
-
-function deleteRecord(type, id) {
-  if (!confirm(t("confirmDelete"))) return;
-  const key = { student: "students", teacher: "teachers",
-    exam: "exams", fee: "fees" }[type];
-  if (!key) return;
-
-  db[key] = db[key].filter(item => item.id !== id);
-
-  if (type === "student") {
-    db.attendance = db.attendance.filter(a => a.studentId !== id);
-    db.exams = db.exams.filter(a => a.studentId !== id);
-    db.fees = db.fees.filter(a => a.studentId !== id);
-  }
-  save();
-  toast(t("deleted"));
-}
-
-/* NAVIGATION */
-$$(".nav").forEach(button => {
-  button.addEventListener("click", () => navigate(button.dataset.page));
-});
-
-$$("[data-goto]").forEach(button => {
-  button.addEventListener("click", () => navigate(button.dataset.goto));
-});
-
-$("#language").addEventListener("change", event => {
-  lang = event.target.value;
-  localStorage.setItem("bilalLang", lang);
-  applyLang();
-});
-
-/* STUDENT FORM */
-$("#studentForm").addEventListener("submit", event => {
-  event.preventDefault();
-  const data = formData(event.currentTarget);
-  const student = {
-    id: uid("stu"),
-    name: data.name.trim(),
-    grade: data.grade,
-    gender: data.gender,
-    phone: data.phone.trim(),
-    studentId: data.studentId.trim() || "BS-" + Date.now()
-  };
-
-  if (!student.name || !student.grade) return;
-  if (db.students.some(s => s.studentId === student.studentId)) {
-    toast("Student ID already exists.");
-    return;
-  }
-
-  db.students.push(student);
-  event.currentTarget.reset();
-  save();
-  toast(t("studentAdded"));
-});
-
-/* TEACHER FORM */
-$("#teacherForm").addEventListener("submit", event => {
-  event.preventDefault();
-  const data = formData(event.currentTarget);
-
-  db.teachers.push({
-    id: uid("tea"),
-    name: data.name.trim(),
-    subject: data.subject.trim(),
-    phone: data.phone.trim(),
-    grade: data.grade
-  });
-
-  event.currentTarget.reset();
-  save();
-  toast(t("teacherAdded"));
-});
-
-/* STUDENT SEARCH AND DELETE */
-$("#studentSearch").addEventListener("input", renderStudents);
-
-document.addEventListener("click", event => {
-  const button = event.target.closest("[data-delete]");
-  if (button) deleteRecord(button.dataset.delete, button.dataset.id);
-});
-
-/* ATTENDANCE */
-$("#attendanceGrade").addEventListener("change", renderAttendance);
-$("#attendanceDate").addEventListener("change", renderAttendance);
-
-$("#saveAttendance").addEventListener("click", () => {
-  const grade = $("#attendanceGrade").value;
-  const date = $("#attendanceDate").value || today();
-
-  if (!grade) {
-    toast(t("chooseGrade"));
-    return;
-  }
-
-  $$(".attendance-status").forEach(select => {
-    const studentId = select.dataset.student;
-    const existing = db.attendance.find(a =>
-      a.studentId === studentId && a.date === date
-    );
-
-    if (existing) {
-      existing.status = select.value;
-    } else {
-      db.attendance.push({
-        id: uid("att"), studentId, date,
-        status: select.value
-      });
-    }
-  });
-
-  save();
-  toast(t("attendanceSaved"));
-});
-
-/* EXAMS */
-$("#examForm").addEventListener("submit", event => {
-  event.preventDefault();
-  const data = formData(event.currentTarget);
-  const score = Number(data.score);
-
-  if (!db.students.some(s => s.id === data.studentId)) {
-    toast(t("requiredStudent"));
-    return;
-  }
-  if (!Number.isFinite(score) || score < 0 || score > 100) return;
-
-  db.exams.push({
-    id: uid("exam"),
-    studentId: data.studentId,
-    subject: data.subject.trim(),
-    exam: data.exam.trim(),
-    score
-  });
-
-  event.currentTarget.reset();
-  save();
-  toast(t("markSaved"));
-});
-
-/* FEES */
-$("#feeDate").value = today();
-
-$("#feeForm").addEventListener("submit", event => {
-  event.preventDefault();
-  const data = formData(event.currentTarget);
-  const amount = Number(data.amount);
-
-  if (!db.students.some(s => s.id === data.studentId)) {
-    toast(t("requiredStudent"));
-    return;
-  }
-  if (!Number.isFinite(amount) || amount <= 0) return;
-
-  db.fees.push({
-    id: uid("fee"),
-    studentId: data.studentId,
-    amount,
-    date: data.date,
-    reference: data.reference.trim()
-  });
-
-  event.currentTarget.reset();
-  $("#feeDate").value = today();
-  save();
-  toast(t("paymentSaved"));
-});
-
-/* CSV REPORTS */
-$("#exportStudents").addEventListener("click", exportStudents);
-$("#reportStudents").addEventListener("click", exportStudents);
-
-$("#reportFees").addEventListener("click", () => {
-  csvDownload("bilal-fees.csv", [
-    ["Student", "Amount ETB", "Date", "Reference"],
-    ...db.fees.map(f => [
-      studentName(f.studentId), f.amount, f.date, f.reference
-    ])
-  ]);
-});
-
-$("#reportExams").addEventListener("click", () => {
-  csvDownload("bilal-exams.csv", [
-    ["Student", "Subject", "Exam", "Score"],
-    ...db.exams.map(e => [
-      studentName(e.studentId), e.subject, e.exam, e.score
-    ])
-  ]);
-});
-
-/* BACKUP AND RESTORE */
-$("#backupBtn").addEventListener("click", backup);
-
-$("#restoreFile").addEventListener("change", async event => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  try {
-    const restored = JSON.parse(await file.text());
-    const valid = restored &&
-      ["students", "teachers", "attendance", "exams", "fees"]
-        .every(key => Array.isArray(restored[key]));
-
-    if (!valid) throw new Error("Invalid structure");
-
-    if (!confirm("Replace current data with this backup?")) return;
-
-    db = restored;
-    save();
-    toast(t("restored"));
-  } catch {
-    toast(t("invalidBackup"));
-  } finally {
-    event.target.value = "";
-  }
-});
-
-/* PWA INSTALL */
-window.addEventListener("beforeinstallprompt", event => {
-  event.preventDefault();
-  installPrompt = event;
-  $("#installBtn").hidden = false;
-});
-
-$("#installBtn").addEventListener("click", async () => {
-  if (!installPrompt) return;
-  installPrompt.prompt();
-  await installPrompt.userChoice;
-  installPrompt = null;
-  $("#installBtn").hidden = true;
-});
-
-/* SERVICE WORKER */
-if ("serviceWorker" in navigator && location.protocol !== "file:") {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js")
-      .catch(error => console.error("Service worker:", error));
-  });
-}
-
-/* START APPLICATION */
-$("#year").textContent = new Date().getFullYear();
-$("#attendanceDate").value = today();
-
-fillGrades();
-applyLang();
-navigate("dashboard");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#126b45">
+  <meta name="description" content="Bilal School Management System, Grades 1–12">
+  <title>Bilal School Management System</title>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">BS</div>
+      <div>
+        <strong>Bilal School</strong>
+        <small data-i18n="subtitle">Management System · Grades 1–12</small>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <select id="language" aria-label="Language">
+        <option value="en">English</option>
+        <option value="om">Afaan Oromo</option>
+      </select>
+
+      <button id="installBtn" class="btn light" hidden data-i18n="install">
+        Install App
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="school-label" data-i18n="workspace">
+        SCHOOL WORKSPACE
+      </div>
+
+      <button class="nav active" data-page="dashboard">
+        ▦ <span data-i18n="dashboard">Dashboard</span>
+      </button>
+
+      <button class="nav" data-page="students">
+        ♙ <span data-i18n="students">Students</span>
+      </button>
+
+      <button class="nav" data-page="teachers">
+        ♧ <span data-i18n="teachers">Teachers</span>
+      </button>
+
+      <button class="nav" data-page="attendance">
+        ✓ <span data-i18n="attendance">Attendance</span>
+      </button>
+
+      <button class="nav" data-page="exams">
+        ▤ <span data-i18n="exams">Examinations</span>
+      </button>
+
+      <button class="nav" data-page="fees">
+        ¤ <span data-i18n="fees">School Fees</span>
+      </button>
+
+      <button class="nav" data-page="reports">
+        ▧ <span data-i18n="reports">Reports</span>
+      </button>
+
+      <div class="sidebar-note">
+        <strong>Bilal School</strong>
+        <br>
+        <span data-i18n="gradeRange">Grade 1 to Grade 12</span>
+        <br>
+        <small>Harar, Ethiopia</small>
+      </div>
+    </aside>
+
+    <main class="main">
+
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow" data-i18n="overview">OVERVIEW</p>
+          <h1 id="pageTitle">Dashboard</h1>
+          <p class="muted" data-i18n="welcome">
+            Welcome to your school management workspace.
+          </p>
+        </div>
+
+        <span class="online-pill">
+          <i></i>
+          <span data-i18n="pwaReady">PWA ready</span>
+        </span>
+      </div>
+
+      <!-- DASHBOARD -->
+      <section id="dashboardPage" class="page">
+
+        <div class="stats">
+
+          <article class="stat-card">
+            <span data-i18n="totalStudents">Total Students</span>
+            <strong id="studentCount">0</strong>
+            <small data-i18n="grade12">Across Grades 1–12</small>
+          </article>
+
+          <article class="stat-card">
+            <span data-i18n="totalTeachers">Total Teachers</span>
+            <strong id="teacherCount">0</strong>
+            <small data-i18n="teachingStaff">Teaching staff</small>
+          </article>
+
+          <article class="stat-card">
+            <span data-i18n="attendanceToday">Attendance Today</span>
+            <strong id="attendanceCount">0</strong>
+            <small data-i18n="recordsToday">Records entered today</small>
+          </article>
+
+          <article class="stat-card">
+            <span data-i18n="feeRecords">Fee Records</span>
+            <strong id="feeCount">0</strong>
+            <small data-i18n="paymentsLogged">Payments logged</small>
+          </article>
+
+        </div>
+
+        <div class="panel welcome-panel">
+          <div>
+            <p class="eyebrow" data-i18n="gettingStarted">
+              GETTING STARTED
+            </p>
+
+            <h2 data-i18n="manageSchool">
+              Manage your school in one place
+            </h2>
+
+            <p class="muted" data-i18n="quickStart">
+              Register students and teachers, record daily attendance,
+              enter exam marks and track school fees.
+            </p>
+          </div>
+
+          <div class="grade-grid" id="gradeGrid"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 data-i18n="recentStudents">Recently Added Students</h2>
+            <button class="text-btn" data-goto="students" data-i18n="viewAll">
+              View all
+            </button>
+          </div>
+
+          <div id="recentStudents" class="table-wrap"></div>
+        </div>
+
+      </section>
+
+      <!-- STUDENTS -->
+      <section id="studentsPage" class="page" hidden>
+
+        <div class="panel">
+
+          <div class="panel-head">
+            <div>
+              <h2 data-i18n="studentRegistration">
+                Student Registration
+              </h2>
+              <p class="muted" data-i18n="studentHelp">
+                Add and manage learners from Grade 1 to Grade 12.
+              </p>
+            </div>
+
+            <button id="exportStudents" class="btn light" data-i18n="exportCsv">
+              Export CSV
+            </button>
+          </div>
+
+          <form id="studentForm" class="form-grid">
+
+            <label>
+              <span data-i18n="fullName">Full name</span>
+              <input name="name" required placeholder="Student full name">
+            </label>
+
+            <label>
+              <span data-i18n="grade">Grade</span>
+              <select name="grade" required id="studentGrade"></select>
+            </label>
+
+            <label>
+              <span data-i18n="gender">Gender</span>
+              <select name="gender">
+                <option>Male</option>
+                <option>Female</option>
+              </select>
+            </label>
+
+            <label>
+              <span data-i18n="parentPhone">Parent phone</span>
+              <input name="phone" placeholder="+251...">
+            </label>
+
+            <label>
+              <span data-i18n="studentId">Student ID (optional)</span>
+              <input name="studentId" placeholder="Auto-generated if blank">
+            </label>
+
+            <button class="btn primary form-submit" type="submit" data-i18n="addStudent">
+              Add Student
+            </button>
+
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 data-i18n="studentList">Student List</h2>
+            <input id="studentSearch" class="search"
+              placeholder="Search by name, ID or grade">
+          </div>
+
+          <div id="studentsTable" class="table-wrap"></div>
+        </div>
+
+      </section>
+
+      <!-- TEACHERS -->
+      <section id="teachersPage" class="page" hidden>
+
+        <div class="panel">
+
+          <div class="panel-head">
+            <div>
+              <h2 data-i18n="teacherManagement">Teacher Management</h2>
+              <p class="muted" data-i18n="teacherHelp">
+                Maintain teacher contact and subject details.
+              </p>
+            </div>
+          </div>
+
+          <form id="teacherForm" class="form-grid">
+
+            <label>
+              <span data-i18n="fullName">Full name</span>
+              <input name="name" required>
+            </label>
+
+            <label>
+              <span data-i18n="subject">Subject</span>
+              <input name="subject" required placeholder="Mathematics">
+            </label>
+
+            <label>
+              <span data-i18n="phone">Phone</span>
+              <input name="phone">
+            </label>
+
+            <label>
+              <span data-i18n="assignedGrade">Assigned grade</span>
+              <select name="grade" class="grade-select"></select>
+            </label>
+
+            <button class="btn primary form-submit" type="submit" data-i18n="addTeacher">
+              Add Teacher
+            </button>
+
+          </form>
+        </div>
+
+        <div class="panel">
+          <h2 data-i18n="teacherList">Teacher List</h2>
+          <div id="teachersTable" class="table-wrap"></div>
+        </div>
+
+      </section>
+
+      <!-- ATTENDANCE -->
+      <section id="attendancePage" class="page" hidden>
+
+        <div class="panel">
+
+          <h2 data-i18n="dailyAttendance">Daily Attendance</h2>
+
+          <p class="muted" data-i18n="attendanceHelp">
+            Choose a grade and mark each learner's attendance.
+          </p>
+
+          <div class="toolbar">
+
+            <label>
+              <span data-i18n="grade">Grade</span>
+              <select id="attendanceGrade" class="grade-select"></select>
+            </label>
+
+            <label>
+              <span data-i18n="date">Date</span>
+              <input id="attendanceDate" type="date">
+            </label>
+
+          </div>
+
+          <div id="attendanceList" class="table-wrap"></div>
+
+          <button id="saveAttendance" class="btn primary" data-i18n="saveAttendance">
+            Save Attendance
+          </button>
+
+        </div>
+
+      </section>
+
+      <!-- EXAMINATIONS -->
+      <section id="examsPage" class="page" hidden>
+
+        <div class="panel">
+
+          <h2 data-i18n="examMarks">Examination Marks</h2>
+
+          <p class="muted" data-i18n="examHelp">
+            Record a student's subject score out of 100.
+          </p>
+
+          <form id="examForm" class="form-grid">
+
+            <label>
+              <span data-i18n="student">Student</span>
+              <select name="studentId" id="examStudent" required></select>
+            </label>
+
+            <label>
+              <span data-i18n="subject">Subject</span>
+              <input name="subject" required placeholder="English">
+            </label>
+
+            <label>
+              <span data-i18n="examName">Exam name</span>
+              <input name="exam" required placeholder="Midterm">
+            </label>
+
+            <label>
+              <span data-i18n="score">Score (0–100)</span>
+              <input name="score" type="number" min="0" max="100" required>
+            </label>
+
+            <button class="btn primary form-submit" type="submit" data-i18n="saveMark">
+              Save Mark
+            </button>
+
+          </form>
+
+        </div>
+
+        <div class="panel">
+          <h2 data-i18n="marksRegister">Marks Register</h2>
+          <div id="examsTable" class="table-wrap"></div>
+        </div>
+
+      </section>
+
+      <!-- SCHOOL FEES -->
+      <section id="feesPage" class="page" hidden>
+
+        <div class="panel">
+
+          <h2 data-i18n="feeTracking">Fee Tracking</h2>
+
+          <p class="muted" data-i18n="feeHelp">
+            Record payments received from students.
+          </p>
+
+          <form id="feeForm" class="form-grid">
+
+            <label>
+              <span data-i18n="student">Student</span>
+              <select name="studentId" id="feeStudent" required></select>
+            </label>
+
+            <label>
+              <span data-i18n="amountBirr">Amount (ETB)</span>
+              <input name="amount" type="number" min="0.01" step="0.01" required>
+            </label>
+
+            <label>
+              <span data-i18n="paymentDate">Payment date</span>
+              <input name="date" id="feeDate" type="date" required>
+            </label>
+
+            <label>
+              <span data-i18n="reference">Receipt / reference</span>
+              <input name="reference">
+            </label>
+
+            <button class="btn primary form-submit" type="submit" data-i18n="recordPayment">
+              Record Payment
+            </button>
+
+          </form>
+
+        </div>
+
+        <div class="panel">
+          <h2 data-i18n="paymentHistory">Payment History</h2>
+          <div id="feesTable" class="table-wrap"></div>
+        </div>
+
+      </section>
+
+      <!-- REPORTS -->
+      <section id="reportsPage" class="page" hidden>
+
+        <div class="panel">
+
+          <h2 data-i18n="schoolReports">School Reports</h2>
+
+          <p class="muted" data-i18n="reportsHelp">
+            Download a simple CSV report for backup or spreadsheet analysis.
+          </p>
+
+          <div class="report-actions">
+
+            <button class="btn primary" id="backupBtn" data-i18n="downloadBackup">
+              Download Full Data Backup
+            </button>
+
+            <button class="btn light" id="reportStudents" data-i18n="studentReport">
+              Student Report CSV
+            </button>
+
+            <button class="btn light" id="reportFees" data-i18n="feeReport">
+              Fee Report CSV
+            </button>
+
+            <button class="btn light" id="reportExams" data-i18n="examReport">
+              Exam Report CSV
+            </button>
+
+          </div>
+
+          <div class="notice">
+            <strong data-i18n="important">Important:</strong>
+
+            <span data-i18n="localStorageNote">
+              This starter version saves data in this browser on this device.
+              It does not yet synchronize between different users or devices.
+            </span>
+          </div>
+
+          <label class="restore-label">
+            <span data-i18n="restoreBackup">Restore backup JSON</span>
+            <input id="restoreFile" type="file" accept=".json,application/json">
+          </label>
+
+        </div>
+
+      </section>
+
+      <footer>
+        © <span id="year"></span> Bilal School · Harar, Ethiopia
+      </footer>
+
+    </main>
+
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+
+</body>
+</html>
