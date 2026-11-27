@@ -28,7 +28,7 @@ let lang = localStorage.getItem('bilalLang') || 'en';
 
 const words = {
   en: {
-    subtitle: 'Management System · Grades 1–12',
+    subtitle: 'Management System · KG 1–3 & Grades 1–12',
     install: 'Install App',
     workspace: 'SCHOOL WORKSPACE',
     dashboard: 'Dashboard',
@@ -39,7 +39,7 @@ const words = {
     fees: 'School Fees',
     reports: 'Reports',
     homework: 'Homework & Exercises',
-    gradeRange: 'Grade 1 to Grade 12',
+    gradeRange: 'KG 1 to Grade 12',
     overview: 'OVERVIEW',
     welcome: 'Welcome to your school management workspace.',
     pwaReady: 'PWA ready',
@@ -47,7 +47,7 @@ const words = {
     totalTeachers: 'Total Teachers',
     attendanceToday: 'Attendance Today',
     feeRecords: 'Fee Records',
-    grade12: 'Across Grades 1–12',
+    grade12: 'Across KG 1–3 and Grades 1–12',
     teachingStaff: 'Teaching staff',
     recordsToday: 'Records entered today',
     paymentsLogged: 'Payments logged',
@@ -57,7 +57,7 @@ const words = {
     recentStudents: 'Recently Added Students',
     viewAll: 'View all',
     studentRegistration: 'Student Registration',
-    studentHelp: 'Add and manage learners from Grade 1 to Grade 12.',
+    studentHelp: 'Add and manage learners from KG 1 to Grade 12.',
     exportCsv: 'Export CSV',
     fullName: 'Full name',
     grade: 'Grade',
@@ -100,7 +100,6 @@ const words = {
     important: 'Important:',
     localStorageNote: 'This version saves data in this browser on this device. It does not yet synchronize between different users or devices.',
     restoreBackup: 'Restore backup JSON',
-
     homeworkHelp: 'Teachers create assignments and students submit their answers.',
     createHomework: 'Create Homework / Exercise',
     homeworkTitle: 'Assignment title',
@@ -117,7 +116,7 @@ const words = {
   },
 
   om: {
-    subtitle: 'Sirna Bulchiinsaa · Kutaa 1–12',
+    subtitle: 'Sirna Bulchiinsaa · KG 1–3 fi Kutaa 1–12',
     install: 'App fe’i',
     workspace: 'IDDOO HOJII MANAA BARUMSAA',
     dashboard: 'Gabatee',
@@ -128,7 +127,7 @@ const words = {
     fees: 'Kaffaltii',
     reports: 'Gabaasa',
     homework: 'Hojii Manaa fi Gilgaala',
-    gradeRange: 'Kutaa 1 hanga 12',
+    gradeRange: 'KG 1 hanga Kutaa 12',
     overview: 'CUUNFAA',
     welcome: 'Baga gara sirna bulchiinsa mana barumsaa dhuftan.',
     pwaReady: 'App qophaa’e',
@@ -136,7 +135,7 @@ const words = {
     totalTeachers: 'Barsiisota Waliigalaa',
     attendanceToday: 'Argama Har’aa',
     feeRecords: 'Galmee Kaffaltii',
-    grade12: 'Kutaa 1–12 hunda',
+    grade12: 'KG 1–3 fi Kutaa 1–12 hunda',
     teachingStaff: 'Hojjettoota barsiisotaa',
     recordsToday: 'Galmee har’a galmaa’e',
     paymentsLogged: 'Kaffaltii galmaa’e',
@@ -146,7 +145,7 @@ const words = {
     recentStudents: 'Barattoota Dhiheenya Galmaa’an',
     viewAll: 'Hunda ilaali',
     studentRegistration: 'Galmee Barataa',
-    studentHelp: 'Barattoota kutaa 1 hanga 12 galmeessi fi bulchi.',
+    studentHelp: 'Barattoota KG 1 hanga Kutaa 12 galmeessi fi bulchi.',
     exportCsv: 'CSV buusi',
     fullName: 'Maqaa guutuu',
     grade: 'Kutaa',
@@ -189,7 +188,6 @@ const words = {
     important: 'Barbaachisaa:',
     localStorageNote: 'Version kun odeeffannoo browser meeshaa kana keessatti kuusa. Meeshaalee adda addaa gidduutti hin wal-simsiisu.',
     restoreBackup: 'Backup JSON deebisi',
-
     homeworkHelp: 'Barsiisaan hojii erga; barataan deebii isaa galcha.',
     createHomework: 'Hojii Manaa / Gilgaala Uumi',
     homeworkTitle: 'Mata duree hojii',
@@ -230,14 +228,38 @@ function toast(msg) {
   setTimeout(() => el.classList.remove('show'), 2300);
 }
 
+/* KG 1–3 AND GRADE 1–12 */
+
 function grades() {
-  return Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`);
+  return [
+    'KG 1',
+    'KG 2',
+    'KG 3',
+    ...Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`)
+  ];
 }
 
 function fillGrades() {
-  const opts = grades().map(g => `<option>${g}</option>`).join('');
-  if ($('#studentGrade')) $('#studentGrade').innerHTML = opts;
-  $$('.grade-select').forEach(s => s.innerHTML = opts);
+  const allGrades = grades();
+
+  function updateSelect(select) {
+    if (!select) return;
+
+    const previousValue = select.value;
+
+    select.innerHTML = allGrades.map(g =>
+      `<option value="${g}">${g}</option>`
+    ).join('');
+
+    if (allGrades.includes(previousValue)) {
+      select.value = previousValue;
+    }
+  }
+
+  updateSelect($('#studentGrade'));
+  updateSelect($('#attendanceGrade'));
+
+  $$('.grade-select').forEach(updateSelect);
 }
 
 function escapeHTML(s) {
@@ -265,7 +287,7 @@ function renderDashboard() {
   $('#feeCount').textContent = db.fees.length;
 
   $('#gradeGrid').innerHTML = grades().map(g =>
-    `<div class="grade-chip">${g.replace('Grade', 'G')}</div>`
+    `<div class="grade-chip">${escapeHTML(g)}</div>`
   ).join('');
 
   $('#recentStudents').innerHTML = table(
@@ -323,8 +345,8 @@ function fillStudentOptions() {
 }
 
 function renderAttendance() {
-  const g = $('#attendanceGrade').value || 'Grade 1';
-  const date = $('#attendanceDate').value || today();
+  const g = $('#attendanceGrade')?.value || 'KG 1';
+  const date = $('#attendanceDate')?.value || today();
 
   const students = db.students.filter(s => s.grade === g);
 
@@ -392,13 +414,15 @@ function updateHomeworkOptions() {
     !student || h.grade === student.grade
   );
 
-  $('#submissionHomework').innerHTML =
-    '<option value="">Select assignment</option>' +
-    available.map(h => `
-      <option value="${escapeHTML(h.id)}">
-        ${escapeHTML(h.title)} — ${escapeHTML(h.subject)}
-      </option>
-    `).join('');
+  if ($('#submissionHomework')) {
+    $('#submissionHomework').innerHTML =
+      '<option value="">Select assignment</option>' +
+      available.map(h => `
+        <option value="${escapeHTML(h.id)}">
+          ${escapeHTML(h.title)} — ${escapeHTML(h.subject)}
+        </option>
+      `).join('');
+  }
 }
 
 function renderHomework() {
@@ -493,7 +517,7 @@ $$('[data-goto]').forEach(b =>
   b.addEventListener('click', () => showPage(b.dataset.goto))
 );
 
-$('#studentForm').addEventListener('submit', e => {
+$('#studentForm')?.addEventListener('submit', e => {
   e.preventDefault();
 
   let d = Object.fromEntries(new FormData(e.target));
@@ -513,7 +537,7 @@ $('#studentForm').addEventListener('submit', e => {
   toast('Student registered successfully');
 });
 
-$('#teacherForm').addEventListener('submit', e => {
+$('#teacherForm')?.addEventListener('submit', e => {
   e.preventDefault();
 
   let d = Object.fromEntries(new FormData(e.target));
@@ -526,7 +550,7 @@ $('#teacherForm').addEventListener('submit', e => {
   toast('Teacher added');
 });
 
-$('#studentSearch').addEventListener('input', renderStudents);
+$('#studentSearch')?.addEventListener('input', renderStudents);
 
 document.addEventListener('click', e => {
   if (e.target.dataset.deleteStudent) {
@@ -568,10 +592,10 @@ document.addEventListener('click', e => {
   }
 });
 
-$('#attendanceGrade').addEventListener('change', renderAttendance);
-$('#attendanceDate').addEventListener('change', renderAttendance);
+$('#attendanceGrade')?.addEventListener('change', renderAttendance);
+$('#attendanceDate')?.addEventListener('change', renderAttendance);
 
-$('#saveAttendance').addEventListener('click', () => {
+$('#saveAttendance')?.addEventListener('click', () => {
   const date = $('#attendanceDate').value || today();
 
   $$('[data-attendance]').forEach(el => {
@@ -590,7 +614,7 @@ $('#saveAttendance').addEventListener('click', () => {
   toast('Attendance saved');
 });
 
-$('#examForm').addEventListener('submit', e => {
+$('#examForm')?.addEventListener('submit', e => {
   e.preventDefault();
 
   let d = Object.fromEntries(new FormData(e.target));
@@ -603,7 +627,7 @@ $('#examForm').addEventListener('submit', e => {
   toast('Exam mark saved');
 });
 
-$('#feeForm').addEventListener('submit', e => {
+$('#feeForm')?.addEventListener('submit', e => {
   e.preventDefault();
 
   let d = Object.fromEntries(new FormData(e.target));
@@ -704,34 +728,34 @@ function csv(rows) {
   ).join('\n');
 }
 
-$('#exportStudents').addEventListener('click', () =>
+$('#exportStudents')?.addEventListener('click', () =>
   download('bilal-students.csv', csv([
     ['ID', 'Name', 'Grade', 'Gender', 'Parent phone'],
     ...db.students.map(s => [s.id, s.name, s.grade, s.gender, s.phone])
   ]))
 );
 
-$('#reportStudents').addEventListener('click', () => $('#exportStudents').click());
+$('#reportStudents')?.addEventListener('click', () => $('#exportStudents')?.click());
 
-$('#reportFees').addEventListener('click', () =>
+$('#reportFees')?.addEventListener('click', () =>
   download('bilal-fees.csv', csv([
     ['Student ID', 'Amount ETB', 'Date', 'Reference'],
     ...db.fees.map(x => [x.studentId, x.amount, x.date, x.reference])
   ]))
 );
 
-$('#reportExams').addEventListener('click', () =>
+$('#reportExams')?.addEventListener('click', () =>
   download('bilal-exams.csv', csv([
     ['Student ID', 'Subject', 'Exam', 'Score'],
     ...db.exams.map(x => [x.studentId, x.subject, x.exam, x.score])
   ]))
 );
 
-$('#backupBtn').addEventListener('click', () =>
+$('#backupBtn')?.addEventListener('click', () =>
   download('bilal-school-backup.json', JSON.stringify(db, null, 2), 'application/json')
 );
 
-$('#restoreFile').addEventListener('change', async e => {
+$('#restoreFile')?.addEventListener('change', async e => {
   const f = e.target.files[0];
   if (!f) return;
 
@@ -752,7 +776,7 @@ $('#restoreFile').addEventListener('change', async e => {
   }
 });
 
-$('#language').addEventListener('change', e => {
+$('#language')?.addEventListener('change', e => {
   lang = e.target.value;
   localStorage.setItem('bilalLang', lang);
   applyLang();
@@ -765,10 +789,10 @@ let installPrompt;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   installPrompt = e;
-  $('#installBtn').hidden = false;
+  if ($('#installBtn')) $('#installBtn').hidden = false;
 });
 
-$('#installBtn').addEventListener('click', async () => {
+$('#installBtn')?.addEventListener('click', async () => {
   if (!installPrompt) return;
 
   installPrompt.prompt();
@@ -788,9 +812,9 @@ if ('serviceWorker' in navigator) {
 
 /* INITIALIZE APP */
 
-$('#year').textContent = new Date().getFullYear();
-$('#attendanceDate').value = today();
-$('#feeDate').value = today();
+if ($('#year')) $('#year').textContent = new Date().getFullYear();
+if ($('#attendanceDate')) $('#attendanceDate').value = today();
+if ($('#feeDate')) $('#feeDate').value = today();
 
 fillGrades();
 applyLang();
